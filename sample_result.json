@@ -1,0 +1,13 @@
+{
+  "id": "sample-1",
+  "user_firebase_uid": "demo-uid",
+  "audio_path": "demo/voice-sample.wav",
+  "created_at": "2025-11-08T00:00:00Z",
+  "label": "Healthy",
+  "score": 0.23,
+  "features": {
+    "mean_pitch": 120.0,
+    "jitter_local": 0.005,
+    "shimmer_local": 0.02
+  }
+}

@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Sign up — Parkinson's Voice Detector</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>body{font-family:Arial;max-width:720px;margin:40px auto}form{display:flex;flex-direction:column;gap:8px}</style>
+</head>
+<body>
+<h2>Create account</h2>
+<form id="signupForm">
+  <input id="email" type="email" placeholder="Email" required />
+  <input id="password" type="password" placeholder="Password (6+ chars)" required />
+  <button type="submit">Sign up</button>
+</form>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAoddqc3ahy_Q-hUI9HjRlLEBmdSrmwdHs",
+  authDomain: "gdg0111.firebaseapp.com",
+  projectId: "gdg0111",
+  storageBucket: "gdg0111.firebasestorage.app",
+  messagingSenderId: "737666672090",
+  appId: "1:737666672090:web:164d2009a53b41af648ce3",
+  measurementId: "G-C8P93S26XE"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+document.getElementById('signupForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try {
+    const uc = await auth.createUserWithEmailAndPassword(email, pw);
+    alert("Account created! Proceed to Dashboard.");
+    window.location.href = "dashboard.html";
+  } catch(err){
+    alert("Signup error: " + err.message);
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Parkinson's Voice Detector — Landing</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; max-width:900px; margin:40px auto; line-height:1.5; }
+    header { display:flex; justify-content:space-between; align-items:center; }
+    nav a { margin-left:12px; }
+    .card { border:1px solid #ddd; padding:18px; border-radius:8px; margin-top:16px; }
+    .cta { padding:10px 16px; background:#1976d2; color:white; text-decoration:none; border-radius:6px; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Parkinson's Voice Detector</h1>
+  <nav>
+    <a href="login.html">Login</a>
+    <a href="signup.html">Sign up</a>
+    <a href="dashboard.html">Dashboard</a>
+  </nav>
+</header>
+
+<div class="card">
+  <h2>What this demo does</h2>
+  <p>Record a short 3–5 second vowel sound or phrase and the app will analyze your voice to give a risk score for Parkinson's-like voice characteristics. This is a demo project for hackathon / research; not a clinical diagnosis.</p>
+  <a class="cta" href="login.html">Get started — Login</a>
+</div>
+
+<div class="card">
+  <h3>Quick features</h3>
+  <ul>
+    <li>User sign-up & login (Firebase)</li>
+    <li>Record voice directly from browser</li>
+    <li>Upload, preprocessing, feature extraction and model inference (FastAPI backend)</li>
+    <li>Per-user history stored in Supabase</li>
+    <li>Timeline & charts per user</li>
+    <li>Generate PDF report and simple AI chatbot (demo)</li>
+  </ul>
+</div>
+<footer style="margin-top:28px; color:#666; font-size:0.9rem;">
+  <p>Fill Firebase & Supabase keys in frontend/env and backend/.env as described in README before running.</p>
+</footer>
+</body>
+</html>
