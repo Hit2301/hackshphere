@@ -5,6 +5,8 @@ export default function Recorder({ onUpload, setStatus }) {
   const [audioURL, setAudioURL] = useState(null);
   const [blob, setBlob] = useState(null);
   const [time, setTime] = useState(0); // timer in seconds
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
   const mediaRecorderRef = useRef(null);
   const chunks = useRef([]);
   const timerRef = useRef(null);
@@ -59,6 +61,7 @@ export default function Recorder({ onUpload, setStatus }) {
     setBlob(null);
     setAudioURL(null);
     setTime(0);
+    setUploadProgress(0);
     clearInterval(timerRef.current);
     setStatus("Recording reset 🔁");
   };
@@ -76,14 +79,34 @@ export default function Recorder({ onUpload, setStatus }) {
     }
   };
 
-  // ☁️ Upload to backend
+  // ☁️ Upload to backend with progress
   const uploadRecording = async () => {
     if (!blob) {
       alert("No audio to upload");
       return;
     }
+
+    setUploading(true);
+    setUploadProgress(0);
     setStatus("Uploading...");
-    await onUpload(blob);
+
+    try {
+      // Simulate upload progress
+      for (let i = 1; i <= 100; i++) {
+        await new Promise((res) => setTimeout(res, 25)); // simulate delay
+        setUploadProgress(i);
+      }
+
+      // Call backend function
+      await onUpload(blob);
+      setStatus("Upload successful ✅");
+    } catch (err) {
+      console.error(err);
+      setStatus("Upload failed ❌");
+    } finally {
+      setUploading(false);
+      setUploadProgress(100);
+    }
   };
 
   // 🕒 Format time as MM:SS
@@ -102,11 +125,15 @@ export default function Recorder({ onUpload, setStatus }) {
     <div className="card p-4 flex flex-col items-center">
       <h3 className="text-lg font-semibold mb-3">🎤 Voice Recorder</h3>
 
-      {/* Timer */}
+      {/* Timer + Blinking Red Dot */}
       {recording && (
-        <p className="text-red-600 font-mono text-lg mb-2">
-          ⏱ {formatTime(time)}
-        </p>
+        <div className="flex items-center mb-2">
+          <span
+            className="w-3 h-3 rounded-full bg-red-600 mr-2 animate-pulse"
+            title="Recording..."
+          ></span>
+          <p className="text-red-600 font-mono text-lg">{formatTime(time)}</p>
+        </div>
       )}
 
       <div className="flex flex-wrap gap-3 mb-4 justify-center">
@@ -128,17 +155,17 @@ export default function Recorder({ onUpload, setStatus }) {
 
         <button
           onClick={uploadRecording}
-          disabled={!blob}
+          disabled={!blob || uploading}
           className={`px-4 py-2 rounded ${
             blob ? "bg-green-600 text-white" : "bg-gray-400 text-white"
           }`}
         >
-          Upload Recording
+          {uploading ? "Uploading..." : "Upload Recording"}
         </button>
 
         <button
           onClick={resetRecording}
-          disabled={!blob}
+          disabled={!blob || uploading}
           className={`px-4 py-2 rounded ${
             blob ? "bg-yellow-500 text-white" : "bg-gray-400 text-white"
           }`}
@@ -163,6 +190,16 @@ export default function Recorder({ onUpload, setStatus }) {
         <div className="w-full mt-3 text-center">
           <p className="text-sm text-gray-700 mb-1">Preview your audio:</p>
           <audio controls src={audioURL} className="w-full"></audio>
+        </div>
+      )}
+
+      {/* 📊 Upload Progress Bar */}
+      {uploading && (
+        <div className="w-full mt-4 bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div
+            className="bg-green-500 h-full transition-all duration-200"
+            style={{ width: `${uploadProgress}%` }}
+          ></div>
         </div>
       )}
     </div>
