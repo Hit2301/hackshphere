@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import app from "../helpers/firebase";
 
 export default function Signup() {
-  const auth = getAuth();
+  const auth = getAuth(app);
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
 
@@ -11,33 +13,33 @@ export default function Signup() {
     e.preventDefault();
     try {
       await createUserWithEmailAndPassword(auth, email, pw);
-      window.location.href = "/";
+      navigate("/dashboard"); // ✅ Redirect to Dashboard after signup
     } catch (err) {
       alert(err.message);
     }
   }
 
   return (
-    <div className="card" style={{ maxWidth: 420 }}>
-      <h2>Signup</h2>
-      <form
-        onSubmit={signup}
-        style={{ display: "flex", flexDirection: "column", gap: 8 }}
-      >
+    <div className="card max-w-md mx-auto mt-10 p-6 shadow-lg rounded-lg border border-gray-200">
+      <h2 className="text-2xl font-semibold mb-4 text-center">Sign Up</h2>
+      <form onSubmit={signup} className="flex flex-col gap-4">
         <input
-          className="p-2 border"
+          className="p-2 border rounded"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <input
-          className="p-2 border"
+          className="p-2 border rounded"
           type="password"
           placeholder="Password"
           value={pw}
           onChange={(e) => setPw(e.target.value)}
         />
-        <button className="bg-green-600 text-white px-4 py-2 rounded">
+        <button
+          type="submit"
+          className="bg-green-600 text-white py-2 rounded hover:bg-green-700"
+        >
           Sign Up
         </button>
       </form>

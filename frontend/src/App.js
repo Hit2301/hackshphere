@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
+import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
@@ -7,26 +8,31 @@ import Dashboard from "./pages/Dashboard";
 export default function App() {
   return (
     <div className="container">
-      <header className="header">
-        <h1 className="text-2xl font-semibold">
-          Hackshphere — Parkinson Voice Detector
+      <header className="header flex justify-between items-center p-4 border-b border-gray-200">
+        <h1 className="text-2xl font-semibold text-blue-700">
+          HackSphere — Parkinson Voice Detector
         </h1>
         <nav>
-          <Link to="/" className="mr-4">
-            Dashboard
+          <Link to="/" className="mr-4 hover:underline">
+            Home
           </Link>
-          <Link to="/login" className="mr-4">
+          <Link to="/login" className="mr-4 hover:underline">
             Login
           </Link>
-          <Link to="/signup">Signup</Link>
+          <Link to="/signup" className="hover:underline">
+            Signup
+          </Link>
         </nav>
       </header>
 
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-      </Routes>
+      <main className="p-6">
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+      </main>
     </div>
   );
 }
