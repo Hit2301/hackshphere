@@ -1,0 +1,323 @@
+#!/bin/bash
+# ==============================
+# Hackshphere React + Firebase + Supabase Setup
+# ==============================
+
+echo "🚀 Creating Hackshphere React Frontend (with Supabase + Firebase)..."
+
+# 1. Create React App
+npx create-react-app hackshphere-frontend
+cd hackshphere-frontend
+
+# 2. Install dependencies
+npm install firebase axios chart.js react-chartjs-2 react-router-dom @supabase/supabase-js
+
+# 3. Clean and make folders
+rm -rf src
+mkdir -p src/components src/pages src/helpers public
+
+# 4. Create index.html
+cat << 'EOF' > public/index.html
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Hackshphere — Parkinson Detector</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+EOF
+
+# 5. Create index.js
+cat << 'EOF' > src/index.js
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import App from './App';
+import './index.css';
+
+createRoot(document.getElementById('root')).render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+);
+EOF
+
+# 6. Create index.css
+cat << 'EOF' > src/index.css
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+body { font-family: Inter, Arial, sans-serif; background:#f3f4f6; margin:0; padding:0; }
+.container { max-width:1000px; margin:24px auto; padding:20px; }
+.card { background:white; border-radius:8px; padding:16px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+button { cursor:pointer; }
+EOF
+
+# 7. Create App.js
+cat << 'EOF' > src/App.js
+import React from 'react';
+import { Routes, Route, Link } from 'react-router-dom';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Dashboard from './pages/Dashboard';
+
+export default function App(){
+  return (
+    <div className="container">
+      <header className="header">
+        <h1 className="text-2xl font-semibold">Hackshphere — Parkinson Voice</h1>
+        <nav>
+          <Link to="/" className="mr-4">Dashboard</Link>
+          <Link to="/login" className="mr-4">Login</Link>
+          <Link to="/signup">Signup</Link>
+        </nav>
+      </header>
+      <Routes>
+        <Route path="/" element={<Dashboard/>} />
+        <Route path="/login" element={<Login/>} />
+        <Route path="/signup" element={<Signup/>} />
+      </Routes>
+    </div>
+  );
+}
+EOF
+
+# 8. Firebase helper
+cat << 'EOF' > src/helpers/firebase.js
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+
+const firebaseConfig = {
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+};
+
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export default app;
+EOF
+
+# 9. Supabase helper
+cat << 'EOF' > src/helpers/supabase.js
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+EOF
+
+# 10. Recorder component
+cat << 'EOF' > src/components/Recorder.js
+import React, {useState} from 'react';
+
+export default function Recorder({onUpload, setStatus}) {
+  const [recording, setRecording] = useState(false);
+  const [blob, setBlob] = useState(null);
+
+  async function start() {
+    setStatus('Requesting microphone...');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const media = new MediaRecorder(stream);
+      const chunks = [];
+      media.ondataavailable = e => chunks.push(e.data);
+      media.onstop = () => {
+        const b = new Blob(chunks, { type: 'audio/wav' });
+        setBlob(b);
+        setStatus('Recording ready');
+      };
+      media.start();
+      setRecording(true);
+      setTimeout(()=> { media.stop(); setRecording(false); }, 4000);
+    } catch(err) {
+      setStatus('Microphone error');
+      alert('Microphone access denied.');
+    }
+  }
+
+  return (
+    <div className="card">
+      <button className="bg-blue-600 text-white px-4 py-2 rounded mr-2" onClick={start} disabled={recording}>
+        {recording ? 'Recording...' : 'Start Recording'}
+      </button>
+      <button className="bg-green-600 text-white px-4 py-2 rounded" onClick={()=>{ if(blob) onUpload(blob); }} disabled={!blob}>
+        Upload
+      </button>
+    </div>
+  );
+}
+EOF
+
+# 11. Timeline component (uses Supabase)
+cat << 'EOF' > src/components/Timeline.js
+import React, {useEffect, useState} from 'react';
+import { supabase } from '../helpers/supabase';
+
+export default function Timeline({user}) {
+  const [results, setResults] = useState([]);
+
+  useEffect(()=>{
+    async function load(){
+      if(!user) return;
+      const { data, error } = await supabase
+        .from('voice_results')
+        .select('*')
+        .eq('user_id', user.uid)
+        .order('created_at', { ascending: false });
+      if(error) console.error('Supabase error:', error);
+      else setResults(data);
+    }
+    load();
+  }, [user]);
+
+  return (
+    <div className="card" style={{marginTop:12}}>
+      <h3 className="font-semibold">History</h3>
+      {results.length ? <ul>{results.map(r=>(
+        <li key={r.id}>{new Date(r.created_at).toLocaleString()} — Score: {r.score} ({r.label})</li>
+      ))}</ul> : <p>No results yet</p>}
+    </div>
+  );
+}
+EOF
+
+# 12. Chatbot component
+cat << 'EOF' > src/components/Chatbot.js
+import React, {useState} from 'react';
+
+export default function Chatbot() {
+  const [log, setLog] = useState([]);
+  const [q, setQ] = useState('');
+  async function send(){
+    if(!q) return;
+    setLog(l=>[...l,{from:'user',text:q}]);
+    let a="I can help with voice health. Try: 'How long should I record?'";
+    if(q.toLowerCase().includes('how long')) a='Record for 3–5 seconds.';
+    if(q.toLowerCase().includes('jitter')) a='Jitter & shimmer measure voice irregularities.';
+    setTimeout(()=>setLog(l=>[...l,{from:'bot',text:a}]),400);
+    setQ('');
+  }
+  return(<div className="card" style={{marginTop:12}}>
+    <h3 className="font-semibold">AI Chatbot</h3>
+    <div style={{height:180,overflow:'auto',background:'#fafafa',padding:8}}>
+      {log.map((e,i)=>(<div key={i}><b>{e.from}:</b> {e.text}</div>))}
+    </div>
+    <div style={{marginTop:8,display:'flex',gap:8}}>
+      <input className="border p-2 flex-1" value={q} onChange={e=>setQ(e.target.value)} placeholder="Ask something..."/>
+      <button onClick={send} className="bg-indigo-600 text-white px-4 py-2 rounded">Send</button>
+    </div>
+  </div>);
+}
+EOF
+
+# 13. Pages (Login, Signup, Dashboard)
+cat << 'EOF' > src/pages/Login.js
+import React, {useState} from 'react';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import app from '../helpers/firebase';
+export default function Login(){
+  const auth = getAuth();
+  const [email,setEmail] = useState('');
+  const [pw,setPw] = useState('');
+  async function login(e){
+    e.preventDefault();
+    try {
+      await signInWithEmailAndPassword(auth,email,pw);
+      window.location.href='/';
+    } catch(err){ alert(err.message); }
+  }
+  return(<div className="card" style={{maxWidth:420}}>
+    <h2>Login</h2>
+    <form onSubmit={login} style={{display:'flex',flexDirection:'column',gap:8}}>
+      <input className="p-2 border" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
+      <input className="p-2 border" type="password" placeholder="Password" value={pw} onChange={e=>setPw(e.target.value)} />
+      <button className="bg-blue-600 text-white px-4 py-2 rounded">Login</button>
+    </form>
+  </div>);
+}
+EOF
+
+cat << 'EOF' > src/pages/Signup.js
+import React, {useState} from 'react';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import app from '../helpers/firebase';
+export default function Signup(){
+  const auth = getAuth();
+  const [email,setEmail] = useState('');
+  const [pw,setPw] = useState('');
+  async function signup(e){
+    e.preventDefault();
+    try {
+      await createUserWithEmailAndPassword(auth,email,pw);
+      window.location.href='/';
+    } catch(err){ alert(err.message); }
+  }
+  return(<div className="card" style={{maxWidth:420}}>
+    <h2>Signup</h2>
+    <form onSubmit={signup} style={{display:'flex',flexDirection:'column',gap:8}}>
+      <input className="p-2 border" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
+      <input className="p-2 border" type="password" placeholder="Password" value={pw} onChange={e=>setPw(e.target.value)} />
+      <button className="bg-green-600 text-white px-4 py-2 rounded">Sign Up</button>
+    </form>
+  </div>);
+}
+EOF
+
+cat << 'EOF' > src/pages/Dashboard.js
+import React, {useState, useEffect} from 'react';
+import { getAuth } from 'firebase/auth';
+import Recorder from '../components/Recorder';
+import Timeline from '../components/Timeline';
+import Chatbot from '../components/Chatbot';
+export default function Dashboard(){
+  const auth = getAuth();
+  const [user, setUser] = useState(auth.currentUser);
+  const [latest, setLatest] = useState(null);
+  const [status, setStatus] = useState('');
+  useEffect(()=> auth.onAuthStateChanged(u=>setUser(u)),[]);
+  async function handleUpload(blob){
+    if(!user) return alert('Please login first');
+    setStatus('Uploading...');
+    const token = await user.getIdToken();
+    const fd = new FormData();
+    fd.append('file', blob, 'voice.wav');
+    const resp = await fetch((process.env.REACT_APP_BACKEND_URL || 'http://127.0.0.1:8000')+'/upload',{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd});
+    const js = await resp.json();
+    setLatest(js); setStatus('Done');
+  }
+  return(<div>
+    <div className="card"><h2>Welcome {user?.email || 'Guest'}</h2></div>
+    <Recorder onUpload={handleUpload} setStatus={setStatus}/>
+    <div className="card"><h3>Latest Result</h3><pre>{latest ? JSON.stringify(latest,null,2):'No results yet'}</pre></div>
+    <Timeline user={user}/>
+    <Chatbot/>
+  </div>);
+}
+EOF
+
+# 14. .env.example
+cat << 'EOF' > .env.example
+REACT_APP_BACKEND_URL=http://127.0.0.1:8000
+REACT_APP_FIREBASE_API_KEY=YOUR_FIREBASE_API_KEY
+REACT_APP_FIREBASE_AUTH_DOMAIN=YOUR_FIREBASE_AUTH_DOMAIN
+REACT_APP_FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID
+REACT_APP_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+EOF
+
+echo "✅ Frontend setup complete!"
+echo "Next steps:"
+echo "cd hackshphere-frontend"
+echo "cp .env.example .env"
+echo "npm start"
+
+chmod +x setup_frontend_supabase.sh
+./setup_frontend_supabase.sh
+
+
