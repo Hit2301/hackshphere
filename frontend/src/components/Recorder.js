@@ -1,11 +1,13 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 export default function Recorder({ onUpload, setStatus }) {
   const [recording, setRecording] = useState(false);
   const [audioURL, setAudioURL] = useState(null);
   const [blob, setBlob] = useState(null);
+  const [time, setTime] = useState(0); // timer in seconds
   const mediaRecorderRef = useRef(null);
   const chunks = useRef([]);
+  const timerRef = useRef(null);
 
   // 🎤 Start Recording
   const startRecording = async () => {
@@ -26,11 +28,17 @@ export default function Recorder({ onUpload, setStatus }) {
         setAudioURL(URL.createObjectURL(audioBlob));
         setStatus("Recording ready ✅");
         stream.getTracks().forEach((track) => track.stop());
+        clearInterval(timerRef.current);
+        setRecording(false);
       };
 
       mediaRecorder.start();
       setRecording(true);
       setStatus("Recording...");
+      setTime(0);
+      timerRef.current = setInterval(() => {
+        setTime((prev) => prev + 1);
+      }, 1000);
     } catch (err) {
       console.error("Microphone error:", err);
       alert("Microphone access denied or unavailable.");
@@ -42,15 +50,16 @@ export default function Recorder({ onUpload, setStatus }) {
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
-      setRecording(false);
       setStatus("Recording stopped");
     }
   };
 
-  // 🔁 Reset recording
+  // 🔁 Reset Recording
   const resetRecording = () => {
     setBlob(null);
     setAudioURL(null);
+    setTime(0);
+    clearInterval(timerRef.current);
     setStatus("Recording reset 🔁");
   };
 
@@ -61,6 +70,7 @@ export default function Recorder({ onUpload, setStatus }) {
       setBlob(file);
       setAudioURL(URL.createObjectURL(file));
       setStatus("File loaded ✅");
+      setTime(0);
     } else {
       alert("Please select a valid audio file.");
     }
@@ -76,9 +86,28 @@ export default function Recorder({ onUpload, setStatus }) {
     await onUpload(blob);
   };
 
+  // 🕒 Format time as MM:SS
+  const formatTime = (seconds) => {
+    const mins = String(Math.floor(seconds / 60)).padStart(2, "0");
+    const secs = String(seconds % 60).padStart(2, "0");
+    return `${mins}:${secs}`;
+  };
+
+  // 🧹 Cleanup timer on unmount
+  useEffect(() => {
+    return () => clearInterval(timerRef.current);
+  }, []);
+
   return (
     <div className="card p-4 flex flex-col items-center">
       <h3 className="text-lg font-semibold mb-3">🎤 Voice Recorder</h3>
+
+      {/* Timer */}
+      {recording && (
+        <p className="text-red-600 font-mono text-lg mb-2">
+          ⏱ {formatTime(time)}
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-3 mb-4 justify-center">
         {!recording ? (
