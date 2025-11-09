@@ -55,19 +55,19 @@ export default function Dashboard() {
       setLatest(result);
       setStatus("Upload complete ✅");
 
-      // ✅ Store in Supabase history (for local display/timeline)
-      if (result && result.score !== undefined) {
-        await supabase.from("voice_results").insert([
-          {
-            user_id: user.uid,
-            score: result.score,
-            label:
-              result.label ||
-              (result.score > 0.5 ? "Parkinson Risk" : "Healthy"),
-            created_at: new Date().toISOString(),
-          },
-        ]);
-      }
+      // // ✅ Store in Supabase history (for local display/timeline)
+      // if (result && result.score !== undefined) {
+      //   await supabase.from("results").insert([
+      //     {
+      //       user_id: user.uid,
+      //       score: result.score,
+      //       label:
+      //         result.label ||
+      //         (result.score > 0.5 ? "Parkinson Risk" : "Healthy"),
+      //       created_at: new Date().toISOString(),
+      //     },
+      //   ]);
+      // }
     } catch (err) {
       console.error("Upload error:", err);
       setStatus("Error: " + err.message);

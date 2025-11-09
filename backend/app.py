@@ -1,8 +1,10 @@
 from fastapi import FastAPI, File, UploadFile, Header, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import math
 import os, tempfile
 from dotenv import load_dotenv
+import numpy as np
 load_dotenv()
 
 # Firebase admin init (requires credentials)
@@ -73,7 +75,6 @@ def verify_token(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
 
-# ✅ Upload route
 @app.post("/upload")
 async def upload(file: UploadFile = File(...), user: dict = Depends(verify_token)):
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
@@ -89,6 +90,7 @@ async def upload(file: UploadFile = File(...), user: dict = Depends(verify_token
     storage_path = f"{user['uid']}/{file.filename}"
     public_url = None
 
+    # ✅ Upload to Supabase Storage
     if supabase:
         try:
             with open(tmp.name, "rb") as f:
@@ -97,26 +99,51 @@ async def upload(file: UploadFile = File(...), user: dict = Depends(verify_token
         except Exception as e:
             print("Supabase upload error:", e)
 
+    # ✅ ML Prediction
     label, score, features = predict_from_file(tmp.name)
 
-    if supabase:
-        try:
-            supabase.table("results").insert({
-                "user_firebase_uid": user["uid"],
-                "audio_path": storage_path,
-                "label": label,
-                "score": float(score),
-                "features": features,
-            }).execute()
-        except Exception as e:
-            print("Supabase insert error:", e)
+    # ✅ JSON cleaning helper
+    def clean_json(obj):
+        if isinstance(obj, np.ndarray):
+            return [clean_json(x) for x in obj.tolist()]
+        elif isinstance(obj, list):
+            return [clean_json(x) for x in obj]
+        elif isinstance(obj, dict):
+            return {k: clean_json(v) for k, v in obj.items()}
+        elif isinstance(obj, float):
+            if math.isnan(obj) or math.isinf(obj):
+                return 0.0
+            return float(obj)
+        else:
+            return obj
 
-    return JSONResponse({
+    # ✅ Prepare cleaned insert data
+    data = {
+        "user_id": user["uid"],
+        "audio_path": storage_path,
         "label": label,
-        "score": score,
-        "features": features,
+        "score": float(score),
+        "features": clean_json(features.tolist() if hasattr(features, "tolist") else features),
         "audio_url": public_url
-    })
+    }
+
+    # ✅ Safe insert into correct table
+    try:
+        response = supabase.table("results").insert(data).execute()
+        print("✅ Supabase insert success:", response)
+    except Exception as e:
+        print("Supabase insert error:", e)
+
+    # ✅ Response for frontend
+    response_data = {
+        "label": label,
+        "score": float(score),
+        "features": clean_json(features.tolist() if hasattr(features, "tolist") else features),
+        "audio_url": public_url
+    }
+
+    return JSONResponse(clean_json(response_data))
+
 
 
 # ✅ Fetch results
@@ -125,7 +152,7 @@ def get_user_results(user: dict = Depends(verify_token)):
     if not supabase:
         return {"results": []}
     uid = user["uid"]
-    res = supabase.table("results").select("*").eq("user_firebase_uid", uid).order("created_at", desc=True).execute()
+    res = supabase.table("results").select("*").eq("user_id", uid).order("created_at", desc=True).execute()
     return {"results": res.data}
 
 

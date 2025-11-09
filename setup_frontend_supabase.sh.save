@@ -166,7 +166,7 @@ export default function Timeline({user}) {
     async function load(){
       if(!user) return;
       const { data, error } = await supabase
-        .from('voice_results')
+        .from('results')
         .select('*')
         .eq('user_id', user.uid)
         .order('created_at', { ascending: false });

@@ -8,14 +8,20 @@ export default function Signup() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
+  const [loading, setLoading] = useState(false); // 🔄 Loading state
 
   async function signup(e) {
     e.preventDefault();
+    if (loading) return; // ⛔ Prevent double-clicks
+    setLoading(true);
+
     try {
       await createUserWithEmailAndPassword(auth, email, pw);
-      navigate("/dashboard"); // ✅ Redirect to Dashboard after signup
+      navigate("/dashboard"); // ✅ Redirect after successful signup
     } catch (err) {
       alert(err.message);
+    } finally {
+      setLoading(false); // 🧹 Always reset loading state
     }
   }
 
@@ -28,6 +34,7 @@ export default function Signup() {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          disabled={loading}
         />
         <input
           className="p-2 border rounded"
@@ -35,12 +42,22 @@ export default function Signup() {
           placeholder="Password"
           value={pw}
           onChange={(e) => setPw(e.target.value)}
+          disabled={loading}
         />
         <button
           type="submit"
-          className="bg-green-600 text-white py-2 rounded hover:bg-green-700"
+          disabled={loading}
+          className={`flex justify-center items-center gap-2 py-2 rounded text-white 
+            ${loading ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
         >
-          Sign Up
+          {loading ? (
+            <>
+              <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+              Creating account...
+            </>
+          ) : (
+            "Sign Up"
+          )}
         </button>
       </form>
     </div>
