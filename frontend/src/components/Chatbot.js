@@ -3,66 +3,69 @@ import React, { useState, useEffect, useRef } from "react";
 export default function Chatbot() {
   const [log, setLog] = useState([]);
   const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null);
-  const inputRef = useRef(null);
 
   useEffect(() => {
-    // Make sure the chatbot input is clickable (not blocked by canvas)
-    const chatbot = document.getElementById("chatbot-container");
-    if (chatbot) chatbot.style.zIndex = "50";
-  }, []);
-
-  useEffect(() => {
-    // Smooth scroll to bottom when new message arrives
-    if (chatEndRef.current)
+    if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   }, [log]);
 
   async function send() {
     if (!q.trim()) return;
-    setLog((l) => [...l, { from: "user", text: q }]);
-    let a = "I can help with voice health. Try asking 'How long should I record?'";
-    const text = q.toLowerCase();
-    if (text.includes("how long"))
-      a = "🎙️ Record for about 3–5 seconds for best accuracy.";
-    else if (text.includes("jitter"))
-      a =
-        "⚡ Jitter measures frequency variation — higher jitter may indicate vocal instability.";
-    else if (text.includes("shimmer"))
-      a =
-        "🌟 Shimmer measures loudness variation — used to detect tremors or vocal irregularities.";
-    else if (text.includes("parkinson"))
-      a =
-        "🧠 Parkinson’s voice detection analyzes micro tremors and irregular vocal fold vibrations.";
-    setTimeout(() => setLog((l) => [...l, { from: "bot", text: a }]), 600);
+    const userText = q.trim();
+    setLog((l) => [...l, { from: "user", text: userText }]);
     setQ("");
+    setLoading(true);
+
+    try {
+      const resp = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000"}/chatbot`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userText }),
+        }
+      );
+
+      const data = await resp.json();
+      const botReply = data.reply || "🤖 Sorry, I couldn’t generate a response right now.";
+      setLog((l) => [...l, { from: "bot", text: botReply }]);
+    } catch (err) {
+      console.error("Chatbot error:", err);
+      setLog((l) => [...l, { from: "bot", text: "⚠️ Network error, please try again." }]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div
       id="chatbot-container"
-      className="rounded-2xl shadow-lg p-4 border border-white/10 relative"
+      className="rounded-2xl shadow-lg p-5 border border-white/10 relative"
       style={{
         background:
-          "linear-gradient(145deg, rgba(14,25,40,0.95), rgba(10,35,55,0.9))",
-        color: "#eaf6ff",
+          "linear-gradient(145deg, rgba(8,28,38,0.96), rgba(10,45,60,0.92))",
+        color: "#e8f9f2",
         pointerEvents: "auto",
+        zIndex: 50,
       }}
     >
       <h3 className="font-semibold text-xl mb-3 text-[var(--color-secondary)]">
         🤖 AI Chat Assistant
       </h3>
 
-      {/* Chat window */}
       <div
         style={{
-          height: 220,
+          height: 230,
           overflowY: "auto",
-          padding: "10px",
+          padding: "12px",
           background:
-            "linear-gradient(160deg, rgba(15,35,55,0.85), rgba(20,50,70,0.95))",
-          borderRadius: "10px",
+            "linear-gradient(160deg, rgba(14,122,196,0.15), rgba(15,185,164,0.1))",
+          borderRadius: "12px",
           border: "1px solid rgba(255,255,255,0.15)",
+          fontSize: "0.95rem",
         }}
       >
         {log.map((e, i) => (
@@ -72,37 +75,41 @@ export default function Chatbot() {
               e.from === "user" ? "text-[var(--color-primary)]" : "text-gray-100"
             }`}
           >
-            <b>{e.from === "user" ? "You" : "Bot"}:</b> {e.text}
+            <b>{e.from === "user" ? "You" : "Bot"}:</b>{" "}
+            <span>{e.text}</span>
           </div>
         ))}
+        {loading && (
+          <div className="my-2 text-gray-400 animate-pulse">
+            Bot is typing...
+          </div>
+        )}
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input area */}
       <div
         style={{
-          marginTop: 10,
+          marginTop: 12,
           display: "flex",
           gap: 8,
           pointerEvents: "auto",
+          alignItems: "center",
         }}
       >
         <input
-          ref={inputRef}
-          className="flex-1 px-3 py-2 rounded-lg bg-[#0a1c2b] text-white placeholder-gray-400 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-          style={{
-            caretColor: "#00e0c3",
-            zIndex: 100,
-          }}
+          className="flex-1 px-3 py-2 rounded-lg bg-[#0b1d27] text-white placeholder-gray-400 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          style={{ caretColor: "#00e0c3" }}
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Ask something..."
+          onKeyDown={(e) => e.key === "Enter" && send()}
+          placeholder="Ask about your voice analysis..."
         />
         <button
           onClick={send}
-          className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white px-4 py-2 rounded-lg hover:opacity-90 transition"
+          disabled={loading}
+          className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white px-5 py-2 rounded-lg hover:opacity-90 transition disabled:opacity-50"
         >
-          Send
+          {loading ? "..." : "Send"}
         </button>
       </div>
     </div>

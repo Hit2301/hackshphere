@@ -1,30 +1,30 @@
-from fastapi import FastAPI, File, UploadFile, Header, Depends, HTTPException
+from fastapi import FastAPI, File, UploadFile, Header, Depends, HTTPException, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import math
-import os, tempfile
+import os, math, tempfile
 from dotenv import load_dotenv
 import numpy as np
-load_dotenv()
-
-# Firebase admin init (requires credentials)
 import firebase_admin
 from firebase_admin import credentials, auth as firebase_auth
 from supabase import create_client
 from model import predict_from_file
+import google.generativeai as genai  # ✅ Gemini SDK
+
+# ✅ Load environment variables
+load_dotenv()
 
 app = FastAPI()
 
-# Allow frontend to connect (CORS fix)
+# ✅ Enable CORS (for frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # you can specify your frontend URL if needed
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Initialize Firebase admin using env variables for service account
+# ✅ Firebase Admin initialization
 FIREBASE_PRIVATE_KEY = os.getenv("FIREBASE_PRIVATE_KEY")
 FIREBASE_CLIENT_EMAIL = os.getenv("FIREBASE_CLIENT_EMAIL")
 FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID")
@@ -34,47 +34,62 @@ if FIREBASE_PRIVATE_KEY and FIREBASE_CLIENT_EMAIL and FIREBASE_PROJECT_ID:
         "type": "service_account",
         "project_id": FIREBASE_PROJECT_ID,
         "private_key_id": "dummy_key_id",
-        "private_key": FIREBASE_PRIVATE_KEY.replace('\\n', '\n'),
+        "private_key": FIREBASE_PRIVATE_KEY.replace("\\n", "\n"),
         "client_email": FIREBASE_CLIENT_EMAIL,
         "client_id": "dummy_client_id",
         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
         "token_uri": "https://oauth2.googleapis.com/token",
         "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_x509_cert_url": f"https://www.googleapis.com/robot/v1/metadata/x509/{FIREBASE_CLIENT_EMAIL}"
+        "client_x509_cert_url": f"https://www.googleapis.com/robot/v1/metadata/x509/{FIREBASE_CLIENT_EMAIL}",
     }
     try:
         cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
-    except Exception:
-        pass
+        print("✅ Firebase initialized")
+    except Exception as e:
+        print("⚠️ Firebase already initialized or error:", e)
 else:
-    print("⚠️ Firebase admin credentials not set. Token verification will fail.")
+    print("⚠️ Firebase credentials missing")
 
-# Initialize Supabase
+# ✅ Supabase initialization
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase = None
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "audio-uploads")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
+
+# ✅ Gemini setup
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or "AIzaSyCzRXdVGDzYCIyhZRFjXfJCtKmTP2FGePg"
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    print("✅ Gemini AI configured")
 else:
-    print("⚠️ Supabase not configured. DB/storage operations disabled.")
+    print("⚠️ Gemini API key missing")
 
-
-# ✅ Token verification
+# ✅ Verify Firebase Token
 def verify_token(authorization: str = Header(None)):
     if not authorization:
         raise HTTPException(status_code=401, detail="Missing authorization header")
-    if authorization.lower().startswith("bearer "):
-        token = authorization.split(" ", 1)[1]
-    else:
-        token = authorization
+    token = authorization.split(" ", 1)[1] if authorization.lower().startswith("bearer ") else authorization
     try:
-        decoded = firebase_auth.verify_id_token(token)
-        return decoded
+        return firebase_auth.verify_id_token(token)
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
+# ✅ JSON-safe cleaner
+def clean_json(obj):
+    if isinstance(obj, np.ndarray):
+        return [clean_json(x) for x in obj.tolist()]
+    if isinstance(obj, (list, tuple)):
+        return [clean_json(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: clean_json(v) for k, v in obj.items()}
+    if isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return 0.0
+        return float(obj)
+    return obj
 
+# ✅ Upload Endpoint
 @app.post("/upload")
 async def upload(file: UploadFile = File(...), user: dict = Depends(verify_token)):
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
@@ -83,70 +98,42 @@ async def upload(file: UploadFile = File(...), user: dict = Depends(verify_token
     tmp.flush()
     tmp.close()
 
-    # Ensure audio is valid
     if os.path.getsize(tmp.name) < 1000:
-        raise HTTPException(status_code=400, detail="Uploaded file too small or invalid audio.")
+        raise HTTPException(status_code=400, detail="Invalid or empty audio file")
 
     storage_path = f"{user['uid']}/{file.filename}"
     public_url = None
 
-    # ✅ Upload to Supabase Storage
+    # Upload to Supabase
     if supabase:
         try:
             with open(tmp.name, "rb") as f:
-                supabase.storage.from_(os.getenv("SUPABASE_BUCKET")).upload(storage_path, f)
-            public_url = supabase.storage.from_(os.getenv("SUPABASE_BUCKET")).get_public_url(storage_path)
+                supabase.storage.from_(SUPABASE_BUCKET).upload(storage_path, f)
+            public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(storage_path)
         except Exception as e:
-            print("Supabase upload error:", e)
+            print("⚠️ Supabase upload error:", e)
 
-    # ✅ ML Prediction
+    # Run ML model
     label, score, features = predict_from_file(tmp.name)
 
-    # ✅ JSON cleaning helper
-    def clean_json(obj):
-        if isinstance(obj, np.ndarray):
-            return [clean_json(x) for x in obj.tolist()]
-        elif isinstance(obj, list):
-            return [clean_json(x) for x in obj]
-        elif isinstance(obj, dict):
-            return {k: clean_json(v) for k, v in obj.items()}
-        elif isinstance(obj, float):
-            if math.isnan(obj) or math.isinf(obj):
-                return 0.0
-            return float(obj)
-        else:
-            return obj
-
-    # ✅ Prepare cleaned insert data
-    data = {
+    # Clean for JSON/supabase
+    cleaned_data = clean_json({
         "user_id": user["uid"],
         "audio_path": storage_path,
         "label": label,
         "score": float(score),
-        "features": clean_json(features.tolist() if hasattr(features, "tolist") else features),
-        "audio_url": public_url
-    }
+        "features": features,
+        "audio_url": public_url,
+    })
 
-    # ✅ Safe insert into correct table
     try:
-        response = supabase.table("results").insert(data).execute()
-        print("✅ Supabase insert success:", response)
+        supabase.table("results").insert(cleaned_data).execute()
     except Exception as e:
-        print("Supabase insert error:", e)
+        print("⚠️ Supabase insert error:", e)
 
-    # ✅ Response for frontend
-    response_data = {
-        "label": label,
-        "score": float(score),
-        "features": clean_json(features.tolist() if hasattr(features, "tolist") else features),
-        "audio_url": public_url
-    }
+    return JSONResponse(cleaned_data)
 
-    return JSONResponse(clean_json(response_data))
-
-
-
-# ✅ Fetch results
+# ✅ Get Past Results
 @app.get("/user/results")
 def get_user_results(user: dict = Depends(verify_token)):
     if not supabase:
@@ -155,8 +142,37 @@ def get_user_results(user: dict = Depends(verify_token)):
     res = supabase.table("results").select("*").eq("user_id", uid).order("created_at", desc=True).execute()
     return {"results": res.data}
 
+# ✅ Gemini Chatbot (friendly concise replies)
+@app.post("/chatbot")
+async def chatbot(request: Request):
+    try:
+        data = await request.json()
+        message = data.get("message", "").strip()
+        if not message:
+            return {"reply": "Please type a question."}
 
-# ✅ Root check
+        print(f"💬 Gemini Request: {message}")
+        model = genai.GenerativeModel("gemini-2.0-flash")
+        prompt = (
+            "You are a friendly AI assistant inside a Parkinson’s voice health dashboard. "
+            "Explain voice analysis metrics (like jitter, shimmer, HNR, MFCCs, and health score) simply and clearly. "
+            "Keep answers concise (2–4 sentences) and supportive. "
+            "For casual questions, reply kindly like a human friend. "
+            f"User asked: '{message}'"
+        )
+
+        response = model.generate_content(prompt)
+        reply_text = response.text.strip() if response and response.text else "I'm here to help you understand your voice results!"
+        print(f"✅ Gemini Reply: {reply_text}")
+        return {"reply": reply_text}
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print("❌ Gemini Chatbot Error:", e)
+        return {"reply": "Sorry, I couldn’t connect to the AI assistant."}
+
+# ✅ Root Route
 @app.get("/")
 def root():
-    return {"message": "Parkinson backend running successfully ✅"}
+    return {"message": "Parkinson Backend with Gemini AI ✅ Running"}
