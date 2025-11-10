@@ -108,30 +108,37 @@ def verify_token(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
 # ============================================================
-# 🎵 PREDICTION PIPELINE
+# 🎵 Predict from File (Audio + PCA Bridge + Features)
 # ============================================================
 def predict_from_file(file_path: str):
-    # Extract 920D features
     feats = extract_features(file_path)
     feats = np.nan_to_num(feats).reshape(1, -1)
 
-    # Audio (920D)
-    if audio_scaler is not None:
-        x_audio = audio_scaler.transform(feats)
-    else:
-        print("⚠️ No scaler found — using raw features.")
-        x_audio = feats
+    # 🎧 Audio (Full)
+    x_audio = audio_scaler.transform(feats) if audio_scaler else feats
     p_audio = float(audio_model.predict_proba(x_audio)[0, 1])
 
-    # PCA(22)
+    # 🧩 PCA Bridge (22D)
+    pca_step = pca_bridge.named_steps.get("pca", None)
+    X_pca = pca_step.transform(feats) if pca_step else np.zeros((1, 22))
     p_pca22 = float(pca_bridge.predict_proba(feats)[0, 1])
 
-    # Fusion
+    # 🧠 Fusion
     f_input = np.array([[p_pca22, p_audio]])
     p_fusion = float(fusion_model.predict_proba(f_input)[0, 1])
 
     label = "Parkinson" if p_fusion >= 0.5 else "Healthy"
-    return label, p_audio, p_pca22, p_fusion
+
+    # ✨ AI Summary (optional)
+    if p_fusion < 0.4:
+        ai_summary = "Your voice appears stable and healthy with strong acoustic consistency."
+    elif p_fusion < 0.65:
+        ai_summary = "Some mild irregularities detected in voice features — consider regular monitoring."
+    else:
+        ai_summary = "AI detected significant voice variations possibly linked to Parkinson’s symptoms."
+
+    return label, p_audio, p_pca22, p_fusion, X_pca.tolist()[0], ai_summary
+
 
 
 # ============================================================
@@ -149,37 +156,17 @@ def clean_json(obj):
             return 0.0
         return float(obj)
     return obj
-
 # ============================================================
-# 📤 UPLOAD ENDPOINT
+# 📤 Upload Endpoint (Audio + PCA Fusion)
 # ============================================================
 @app.post("/upload")
 async def upload(file: UploadFile = File(...), user: dict = Depends(verify_token)):
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-    content = await file.read()
-    tmp.write(content)
+    tmp.write(await file.read())
     tmp.flush()
     tmp.close()
 
-    if os.path.getsize(tmp.name) < 1000:
-        raise HTTPException(status_code=400, detail="Invalid or empty audio file uploaded.")
-
-    storage_path = f"{user['uid']}/{file.filename}"
-    public_url = None
-
-    # Upload to Supabase
-    if supabase:
-        try:
-            with open(tmp.name, "rb") as f:
-                supabase.storage.from_(SUPABASE_BUCKET).upload(storage_path, f)
-            public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(storage_path)
-        except Exception as e:
-            print("⚠️ Supabase upload error:", e)
-
-    # Run predictions
-    label, p_audio, p_pca22, p_fusion = predict_from_file(tmp.name)
-
-    print(f"🎧 Audio(920D)={p_audio:.3f} | PCA(22)={p_pca22:.3f} | 🧠 Fusion={p_fusion:.3f}")
+    label, p_audio, p_pca22, p_fusion, pca_features, ai_summary = predict_from_file(tmp.name)
 
     data = {
         "user_id": user["uid"],
@@ -187,17 +174,11 @@ async def upload(file: UploadFile = File(...), user: dict = Depends(verify_token
         "pca22_proba": p_pca22,
         "fusion_proba": p_fusion,
         "final_label": label,
-        "audio_url": public_url,
+        "ai_summary": ai_summary,
+        "pca_features": pca_features,
     }
 
-    if supabase:
-        try:
-            supabase.table("results").insert(clean_json(data)).execute()
-            print("✅ Supabase insert success.")
-        except Exception as e:
-            print("⚠️ Supabase insert error:", e)
-
-    return JSONResponse(clean_json(data))
+    return JSONResponse(data)
 
 # ============================================================
 # 📊 USER RESULTS
