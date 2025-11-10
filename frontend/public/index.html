@@ -2,14 +2,123 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Hackshphere — Parkinson Voice Detector</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Title & Branding -->
+    <title>HackSphere — Parkinson Voice Detector</title>
+    <meta
+      name="description"
+      content="AI-powered early detection of Parkinson’s Disease from voice patterns — a HackSphere innovation for healthcare and wellness."
+    />
+    <meta
+      name="keywords"
+      content="Parkinson's Detection, AI Healthcare, Voice Biomarkers, Machine Learning, Early Diagnosis, HackSphere"
+    />
+
+    <!-- Favicon & App Icon (you can replace favicon.png later) -->
+    <link rel="icon" type="image/png" href="%PUBLIC_URL%/favicon.png" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/favicon.png" />
+
+    <!-- Tailwind CSS (you already use Tailwind via PostCSS in build) -->
+    <!-- Removed redundant CDN link to prevent conflicts -->
+    <!-- Optional: Fallback in case local build fails -->
+    <noscript>
+      <link
+        href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <!-- Web Font for professional typography -->
     <link
-      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#0e7ac4" />
+
+    <!-- Open Graph (social media) -->
+    <meta property="og:title" content="HackSphere — Parkinson Voice Detector" />
+    <meta
+      property="og:description"
+      content="AI for early detection of Parkinson’s from voice patterns. Built with trust and precision."
+    />
+    <meta
+      property="og:image"
+      content="%PUBLIC_URL%/preview.png"
+    />
+    <meta property="og:type" content="website" />
+
+    <!-- Manifest (for PWA compatibility) -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- Smooth font rendering -->
+    <style>
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background: linear-gradient(180deg, #f6fbff 0%, #ffffff 100%);
+        color: #0f172a;
+        margin: 0;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      #root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      /* Loading animation before React mounts */
+      .loader {
+        width: 48px;
+        height: 48px;
+        border: 4px solid rgba(14, 122, 196, 0.2);
+        border-top-color: #0e7ac4;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .loading-screen {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .loading-text {
+        font-weight: 600;
+        color: #0e7ac4;
+      }
+    </style>
   </head>
-  <body class="bg-gray-100">
-    <div id="root"></div>
+
+  <body>
+    <!-- Root div where React mounts -->
+    <div id="root">
+      <!-- Temporary loader before React loads -->
+      <div class="loading-screen">
+        <div class="loader"></div>
+        <p class="loading-text">Initializing HackSphere AI...</p>
+      </div>
+    </div>
+
+    <!-- Optional: Defer JS bundle to improve load performance -->
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
   </body>
 </html>

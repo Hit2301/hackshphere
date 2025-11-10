@@ -4,32 +4,52 @@ export default function Recorder({ onUpload, setStatus }) {
   const [recording, setRecording] = useState(false);
   const [audioURL, setAudioURL] = useState(null);
   const [blob, setBlob] = useState(null);
-  const [time, setTime] = useState(0); // timer in seconds
+  const [time, setTime] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+
   const mediaRecorderRef = useRef(null);
   const chunks = useRef([]);
   const timerRef = useRef(null);
+  const streamRef = useRef(null);
+  const audioCtxRef = useRef(null);
 
-  // 🎤 Start Recording
   const startRecording = async () => {
     setStatus("Requesting microphone...");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
+      streamRef.current = stream;
 
+      // ✅ Play your own voice live for feedback
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const destination = audioCtx.createMediaStreamDestination();
+      source.connect(destination);
+      source.connect(audioCtx.destination); // play live
+      audioCtxRef.current = audioCtx;
+
+      const mimeType =
+        MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : "audio/webm";
+
+      const mediaRecorder = new MediaRecorder(destination.stream, { mimeType });
+      mediaRecorderRef.current = mediaRecorder;
       chunks.current = [];
+
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunks.current.push(e.data);
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(chunks.current, { type: "audio/wav" });
-        setBlob(audioBlob);
-        setAudioURL(URL.createObjectURL(audioBlob));
+        const blob = new Blob(chunks.current, { type: mimeType });
+        setBlob(blob);
+        setAudioURL(URL.createObjectURL(blob));
         setStatus("Recording ready ✅");
-        stream.getTracks().forEach((track) => track.stop());
+
+        if (audioCtxRef.current) audioCtxRef.current.close();
+        if (streamRef.current)
+          streamRef.current.getTracks().forEach((t) => t.stop());
         clearInterval(timerRef.current);
         setRecording(false);
       };
@@ -38,25 +58,22 @@ export default function Recorder({ onUpload, setStatus }) {
       setRecording(true);
       setStatus("Recording...");
       setTime(0);
-      timerRef.current = setInterval(() => {
-        setTime((prev) => prev + 1);
-      }, 1000);
+
+      timerRef.current = setInterval(() => setTime((t) => t + 1), 1000);
     } catch (err) {
       console.error("Microphone error:", err);
-      alert("Microphone access denied or unavailable.");
       setStatus("Microphone error ❌");
+      alert("Microphone access denied or unavailable.");
     }
   };
 
-  // 🛑 Stop Recording
   const stopRecording = () => {
-    if (mediaRecorderRef.current) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
       setStatus("Recording stopped");
     }
   };
 
-  // 🔁 Reset Recording
   const resetRecording = () => {
     setBlob(null);
     setAudioURL(null);
@@ -66,20 +83,17 @@ export default function Recorder({ onUpload, setStatus }) {
     setStatus("Recording reset 🔁");
   };
 
-  // 📁 Upload audio file from device
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith("audio")) {
       setBlob(file);
       setAudioURL(URL.createObjectURL(file));
       setStatus("File loaded ✅");
-      setTime(0);
     } else {
       alert("Please select a valid audio file.");
     }
   };
 
-  // ☁️ Upload to backend with progress
   const uploadRecording = async () => {
     if (!blob) {
       alert("No audio to upload");
@@ -91,13 +105,11 @@ export default function Recorder({ onUpload, setStatus }) {
     setStatus("Uploading...");
 
     try {
-      // Simulate upload progress
       for (let i = 1; i <= 100; i++) {
-        await new Promise((res) => setTimeout(res, 25)); // simulate delay
+        await new Promise((res) => setTimeout(res, 25));
         setUploadProgress(i);
       }
 
-      // Call backend function
       await onUpload(blob);
       setStatus("Upload successful ✅");
     } catch (err) {
@@ -109,29 +121,27 @@ export default function Recorder({ onUpload, setStatus }) {
     }
   };
 
-  // 🕒 Format time as MM:SS
-  const formatTime = (seconds) => {
-    const mins = String(Math.floor(seconds / 60)).padStart(2, "0");
-    const secs = String(seconds % 60).padStart(2, "0");
-    return `${mins}:${secs}`;
+  const formatTime = (s) => {
+    const m = String(Math.floor(s / 60)).padStart(2, "0");
+    const sec = String(s % 60).padStart(2, "0");
+    return `${m}:${sec}`;
   };
 
-  // 🧹 Cleanup timer on unmount
   useEffect(() => {
-    return () => clearInterval(timerRef.current);
+    return () => {
+      clearInterval(timerRef.current);
+      if (audioCtxRef.current) audioCtxRef.current.close();
+      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+    };
   }, []);
 
   return (
     <div className="card p-4 flex flex-col items-center">
       <h3 className="text-lg font-semibold mb-3">🎤 Voice Recorder</h3>
 
-      {/* Timer + Blinking Red Dot */}
       {recording && (
         <div className="flex items-center mb-2">
-          <span
-            className="w-3 h-3 rounded-full bg-red-600 mr-2 animate-pulse"
-            title="Recording..."
-          ></span>
+          <span className="w-3 h-3 rounded-full bg-red-600 mr-2 animate-pulse" />
           <p className="text-red-600 font-mono text-lg">{formatTime(time)}</p>
         </div>
       )}
@@ -152,7 +162,6 @@ export default function Recorder({ onUpload, setStatus }) {
             Stop Recording
           </button>
         )}
-
         <button
           onClick={uploadRecording}
           disabled={!blob || uploading}
@@ -162,7 +171,6 @@ export default function Recorder({ onUpload, setStatus }) {
         >
           {uploading ? "Uploading..." : "Upload Recording"}
         </button>
-
         <button
           onClick={resetRecording}
           disabled={!blob || uploading}
@@ -174,7 +182,6 @@ export default function Recorder({ onUpload, setStatus }) {
         </button>
       </div>
 
-      {/* 📁 Upload from device */}
       <label className="cursor-pointer text-blue-700 hover:underline mb-2">
         Upload Audio from Device
         <input
@@ -185,15 +192,13 @@ export default function Recorder({ onUpload, setStatus }) {
         />
       </label>
 
-      {/* 🎧 Preview */}
       {audioURL && (
         <div className="w-full mt-3 text-center">
-          <p className="text-sm text-gray-700 mb-1">Preview your audio:</p>
-          <audio controls src={audioURL} className="w-full"></audio>
+          <p className="text-sm text-gray-300 mb-1">Preview your audio:</p>
+          <audio controls src={audioURL} className="w-full" />
         </div>
       )}
 
-      {/* 📊 Upload Progress Bar */}
       {uploading && (
         <div className="w-full mt-4 bg-gray-200 rounded-full h-3 overflow-hidden">
           <div
