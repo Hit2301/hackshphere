@@ -36,7 +36,7 @@ export default function Signup() {
           Create Account ✨
         </h2>
         <p className="text-gray-300 mb-8">
-          Join HackSphere and start using AI for early Parkinson detection.
+          Join BHEEM and start using AI for early Parkinson detection.
         </p>
 
         {error && (

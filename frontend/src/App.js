@@ -17,7 +17,7 @@ export default function App() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-landing text-white text-center">
         <h1 className="text-3xl md:text-5xl font-extrabold mb-4 animate-fadeIn">
-          🧠 Initializing <span className="text-[var(--color-secondary)]">HackSphere AI Core</span>
+          🧠 Initializing <span className="text-[var(--color-secondary)]">BHEEM AI Core</span>
         </h1>
         <div className="flex justify-center">
           <span className="pulse-dot"></span>
@@ -34,7 +34,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col text-white">
       <header className="sticky top-0 z-20 backdrop-blur-xl bg-white/10 border-b border-white/10 shadow-md flex justify-between items-center px-6 py-4">
-        <h1 className="text-2xl font-extrabold text-[var(--color-secondary)]">HackSphere AI</h1>
+        <h1 className="text-2xl font-extrabold text-[var(--color-secondary)]">BHEEM AI</h1>
         <nav className="flex gap-6 text-gray-200 font-medium">
           <Link to="/" className="hover:text-[var(--color-secondary)]">Home</Link>
           <Link to="/login" className="hover:text-[var(--color-secondary)]">Login</Link>
@@ -52,7 +52,7 @@ export default function App() {
       </main>
 
       <footer className="text-center text-gray-400 text-sm py-6 border-t border-white/10 bg-white/5 backdrop-blur-xl">
-        Built with 💙 by <span className="text-[var(--color-secondary)] font-semibold">Team HackSphere</span>
+        Built with 💙 by <span className="text-[var(--color-secondary)] font-semibold">Team BHEEM</span>
       </footer>
     </div>
   );

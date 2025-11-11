@@ -130,7 +130,7 @@ export default function Landing() {
       {/* Hero Section */}
       <div className="relative z-10 max-w-5xl px-6 animate-fadeIn">
         <h1 className="text-5xl md:text-6xl font-extrabold mb-6 leading-tight drop-shadow-lg">
-          🧠 HackSphere —{" "}
+          🧠 BHEEM —{" "}
           <span className="text-[var(--color-secondary)]">
             AI for Parkinson Detection
           </span>
@@ -171,7 +171,7 @@ export default function Landing() {
             </h2>
             <p className="text-blue-100 leading-relaxed">
               Minor changes in tone, rhythm, and pitch can reveal neurological
-              changes. HackSphere’s AI decodes these hidden patterns in seconds.
+              changes. BHEEMs AI decodes these hidden patterns in seconds.
             </p>
           </div>
         </div>
