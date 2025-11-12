@@ -75,72 +75,38 @@ Frontend → `Chatbot.js`
 
 ---
 
-## 🗂 Folder Structure
 
-HackSphere/
-│
-├─ backend/
-│ ├─ app.py # FastAPI main backend
-│ ├─ ml_inference.py # Prediction handler
-│ ├─ ml_training/
-│ │ └─ models/
-│ │ ├─ audio_ssl_prosody_calibrated.pkl
-│ │ ├─ fusion_meta_ssl_tabular.pkl
-│ │ ├─ model_feature_schema.json
-│ ├─ requirements.txt
-│ └─ .env.example
-│
-├─ frontend/
-│ ├─ src/
-│ │ ├─ pages/
-│ │ │ ├─ Dashboard.js
-│ │ │ └─ Landing.js
-│ │ ├─ components/
-│ │ │ ├─ Recorder.js
-│ │ │ ├─ Chatbot.js
-│ │ │ └─ Timeline.js
-│ │ └─ data/
-│ │ └─ pca_feature_mapping.json
-│ ├─ index.css
-│ └─ package.json
-│
-└─ README.md
-
-
----
 
 ## ⚙️ Setup Instructions
 
-Create .env in /frontend:
+##Create .env in /frontend:
 
-# --- Firebase Admin SDK (frontend only) ---
+
 REACT_APP_FIREBASE_API_KEY=AIzaSyAoddqc3ahy_Q-hUI9HjRlLEBmdSrmwdHs
 REACT_APP_FIREBASE_PROJECT_ID=gdg0111
 REACT_APP_FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCQklvCXv1e8YyI\n3gzD837XMrvfUGgHC2GcfxA7YsoBrtNqgdL1jprfZF2HmYRYK8UCH3rzL5R+3cLU\nGcbG29Q0M/MBd/ft9BHUiyIujQpmpPshX5QzftYazV7i0lgoKwLWw6RhhJI/7DM/\nI/b1ieTjNJZHaS8U/IbAJcULQIzYoJAA1u7i8ho/q+2P++8Yxy7dmcsXy7zeYJD2\nLnt0iocD6LjRy8bk64L6EEuUUp25+s4lWfzUt0JouzQ0r3dXDOsR7F7oWfDcJ1VA\nJrDDbWqKm233dgUEqRFMsmv461hGrqDrDICE8s8prdAFrezKGwC8QUvlYoUc6xL6\n8pCXYHVHAgMBAAECggEAHYiIjjBxeg/GMb+KxAzeAIAwuPHoDmhYzGt4mWkY8zcP\noVZcDiXPpYsPQEAwNQLcAA8GQt+ZakFLJ6EMZltKAlAKeGZVk5qkedLibLgLQ+S4\nGJ053Tsv6dHCbHuj3rDKp6zXy8QVTFGoNmHWdVpyE6gOexAVuifMLzyIAEBzhV0Y\n5mZTh1lQT7OBv5czqsdEz0c8dUICmBmBAr+GfiOAmhdN7cQyiZTjRjBQhKmwwBYP\nQIww4nhwJE6VrkehGwRxHnzKwVOOWGw3M7O0luqCBjJBdELd+tFiQ7+lEySJHML7\ngVM2WIO7oF0VxYx4sN0gfY5x0vFSBfFigUkPGTN2QQKBgQDHlbj4DVfgY5jnBBte\nE9rcaUhfK66vrNp0DyjY5jX36R+VRWf0bg3jxIkqOTh94MWAi6rSswn2Mk9CCJGC\nwm8hEY5xbtAtUTTNNHReDkip1eSEVYKOdA2s9kGON0au3vzYItBn6w94H8Yjnur8\nlgFh83n8HVu329nzIiO0jrUpqQKBgQC5b8wp0ZvqS12SdRDripCzAgvmhUTANTF/\naX9gq1tj75Kaim/msv65YpYR4w16JRsBI/t4eq6MS0AUzdxXgNpwr4+LJjNDlNd2\nYP/zgiT22EZ7+r7fxydq+GcPa1XzzTCrjviQnQ+L45JZq1OvKh9BHRZB6Sla68u+\nH2nQScldbwKBgDZ4/8373lMo+895iHqp0p87wPvwsTHTbKAmjxB77JjoMK2ODuxg\nqTvUJVe33FpG4cDO3eW55esjGgy8x/I3XRtablU5WGo18sJbIbOWFHD+JuuTZxm4\nRQ9C+ut03L7Xr4zSG61xM3ymt257bklYK7JvQIj1/lV1FMxOMg6SsJFZAoGAYsFN\nQ4AjvrUAUj0SE76prQuL9upGYO5zO92dPohDlYdC1haf3Ya57VS5gzEePkyAgyz8\ngX8kcgapS+sOS3ON4bE9iud/KaCc1qh15uMKeINZljFFcbuIHInJqQaKsdo270am\nza03WFKL4EFDwed22aB5+AQKSCeHS+tC2PBS0vUCgYEAjYFg06i+sN9WfO7Zqdhw\n6ts2FJB8dORZmAtmGPiLcT/UhtavEz3qsHgiJnpHVt5eSmulHt9YV8WwwGjgPTWK\njv1iCi4BciT6O72djJNYvL05EdGyNQw0dWcsIkvO3GwHNj9gI+zuLXDAjtuzILFG\nGQjy/znyaLLcgiy1tWJ0cxw=\n-----END PRIVATE KEY-----\n"
 REACT_APP_FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@gdg0111.iam.gserviceaccount.com
 
-# --- Supabase (Service) ---
+
 REACT_APP_SUPABASE_URL=https://fiuoludgllhobimawrev.supabase.co
 REACT_APP_SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpdW9sdWRnbGxob2JpbWF3cmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1OTEyMTEsImV4cCI6MjA3ODE2NzIxMX0.mwonqvl4dc6GQk6P4TRHKNOOigQPqFtx4AGAbWcGahM
 REACT_APP_SUPABASE_BUCKET=audio-uploads
 
-
-# --- ML Model Path ---
 MODEL_PATH=./model/parkinsons_basic_model.pkl
 
 
-Create .env in /frontend:
+##Create .env in /frontend:
 
-# --- Firebase Admin SDK (Backend only) ---
+
 FIREBASE_PROJECT_ID=gdg0111
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCQklvCXv1e8YyI\n3gzD837XMrvfUGgHC2GcfxA7YsoBrtNqgdL1jprfZF2HmYRYK8UCH3rzL5R+3cLU\nGcbG29Q0M/MBd/ft9BHUiyIujQpmpPshX5QzftYazV7i0lgoKwLWw6RhhJI/7DM/\nI/b1ieTjNJZHaS8U/IbAJcULQIzYoJAA1u7i8ho/q+2P++8Yxy7dmcsXy7zeYJD2\nLnt0iocD6LjRy8bk64L6EEuUUp25+s4lWfzUt0JouzQ0r3dXDOsR7F7oWfDcJ1VA\nJrDDbWqKm233dgUEqRFMsmv461hGrqDrDICE8s8prdAFrezKGwC8QUvlYoUc6xL6\n8pCXYHVHAgMBAAECggEAHYiIjjBxeg/GMb+KxAzeAIAwuPHoDmhYzGt4mWkY8zcP\noVZcDiXPpYsPQEAwNQLcAA8GQt+ZakFLJ6EMZltKAlAKeGZVk5qkedLibLgLQ+S4\nGJ053Tsv6dHCbHuj3rDKp6zXy8QVTFGoNmHWdVpyE6gOexAVuifMLzyIAEBzhV0Y\n5mZTh1lQT7OBv5czqsdEz0c8dUICmBmBAr+GfiOAmhdN7cQyiZTjRjBQhKmwwBYP\nQIww4nhwJE6VrkehGwRxHnzKwVOOWGw3M7O0luqCBjJBdELd+tFiQ7+lEySJHML7\ngVM2WIO7oF0VxYx4sN0gfY5x0vFSBfFigUkPGTN2QQKBgQDHlbj4DVfgY5jnBBte\nE9rcaUhfK66vrNp0DyjY5jX36R+VRWf0bg3jxIkqOTh94MWAi6rSswn2Mk9CCJGC\nwm8hEY5xbtAtUTTNNHReDkip1eSEVYKOdA2s9kGON0au3vzYItBn6w94H8Yjnur8\nlgFh83n8HVu329nzIiO0jrUpqQKBgQC5b8wp0ZvqS12SdRDripCzAgvmhUTANTF/\naX9gq1tj75Kaim/msv65YpYR4w16JRsBI/t4eq6MS0AUzdxXgNpwr4+LJjNDlNd2\nYP/zgiT22EZ7+r7fxydq+GcPa1XzzTCrjviQnQ+L45JZq1OvKh9BHRZB6Sla68u+\nH2nQScldbwKBgDZ4/8373lMo+895iHqp0p87wPvwsTHTbKAmjxB77JjoMK2ODuxg\nqTvUJVe33FpG4cDO3eW55esjGgy8x/I3XRtablU5WGo18sJbIbOWFHD+JuuTZxm4\nRQ9C+ut03L7Xr4zSG61xM3ymt257bklYK7JvQIj1/lV1FMxOMg6SsJFZAoGAYsFN\nQ4AjvrUAUj0SE76prQuL9upGYO5zO92dPohDlYdC1haf3Ya57VS5gzEePkyAgyz8\ngX8kcgapS+sOS3ON4bE9iud/KaCc1qh15uMKeINZljFFcbuIHInJqQaKsdo270am\nza03WFKL4EFDwed22aB5+AQKSCeHS+tC2PBS0vUCgYEAjYFg06i+sN9WfO7Zqdhw\n6ts2FJB8dORZmAtmGPiLcT/UhtavEz3qsHgiJnpHVt5eSmulHt9YV8WwwGjgPTWK\njv1iCi4BciT6O72djJNYvL05EdGyNQw0dWcsIkvO3GwHNj9gI+zuLXDAjtuzILFG\nGQjy/znyaLLcgiy1tWJ0cxw=\n-----END PRIVATE KEY-----\n"
 
-# --- Supabase (Service) ---
+
 SUPABASE_URL=https://fiuoludgllhobimawrev.supabase.co
 SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpdW9sdWRnbGxob2JpbWF3cmV2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjU5MTIxMSwiZXhwIjoyMDc4MTY3MjExfQ.gICMiBOgTRJJw4fq9cCj8aRzWBpwDGo05_mrRpofRKA
 SUPABASE_BUCKET=audio-uploads
 
-# --- ML Model Path ---
+
 MODEL_PATH=./model/parkinsons_basic_model.pkl
 
 GEMINI_API_KEY=AIzaSyAHnKW2Z8itcYb6yaPqayi-MZ6p7mOHkoA
