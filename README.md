@@ -114,7 +114,7 @@ FIREBASE_PROJECT_ID=gdg0111
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@gdg0111.iam.gserviceaccount.com
 
 
-### 🔹 1. Backend/frontend Setu
+### 🔹 1. Backend/frontend Setup
 
 ## Quick start (macOS / Linux)
 
@@ -127,6 +127,18 @@ pip install -r requirements.txt
 # copy .env.example to .env and fill values (Firebase / Supabase / keys)
 uvicorn app:app --reload --port 8000
 ```
+## Quick start (windows)
+
+1. Backend
+```bash
+cd backend
+python -m venv venv
+venv/scripts/Activate
+pip install -r requirements.txt
+# copy .env.example to .env and fill values (Firebase / Supabase / keys)
+uvicorn app:app --reload --port 8000
+```
+## Both 
 
 2. Frontend
 
