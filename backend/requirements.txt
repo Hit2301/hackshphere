@@ -41,7 +41,7 @@ requests==2.32.3
 httpx==0.27.0
 tqdm==4.66.4
 
-# --- Visualization (optional, for training notebooks) ---
+# --- Visualization (optional, for training) ---
 matplotlib==3.9.2
 seaborn==0.13.2
 
@@ -49,9 +49,9 @@ seaborn==0.13.2
 python-multipart==0.0.9
 pytz==2024.2
 
-# --- Optional: model compression / ONNX (future expansion) ---
+# --- ONNX / Future ---
 onnxruntime==1.19.0
 
-# --- Dev / Debug ---
+# --- Dev Tools (optional; safe but heavy) ---
 ipython==8.26.0
 jupyter==1.0.0
