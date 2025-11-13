@@ -95,7 +95,7 @@ REACT_APP_SUPABASE_BUCKET=audio-uploads
 MODEL_PATH=./model/parkinsons_basic_model.pkl
 
 
-##Create .env in /frontend:
+##Create .env in /backend:
 
 
 FIREBASE_PROJECT_ID=gdg0111
