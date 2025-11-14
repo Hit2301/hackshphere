@@ -1,5 +1,5 @@
 # ==========================
-# 🧠 HackSphere Parkinson Voice AI
+# 🧠 HackSphere Parkinson Voice AI (Render Safe)
 # ==========================
 
 # --- Core ---
@@ -8,12 +8,12 @@ uvicorn==0.30.3
 python-dotenv==1.0.1
 joblib==1.4.2
 numpy==1.26.4
-pandas==2.2.2
-scikit-learn==1.5.2
-scipy==1.13.1
+pandas==2.2.1         # 🔥 Render-safe version
+scikit-learn==1.4.2   # 🔥 most stable for render
+scipy==1.12.0         # 🔥 avoid compilation issues
 
 # --- Audio Processing ---
-librosa==0.10.2.post1
+librosa==0.10.1
 soundfile==0.12.1
 audioread==3.0.1
 pydub==0.25.1
@@ -21,10 +21,10 @@ speechpy==2.4
 praat-parselmouth==0.4.3
 
 # --- Machine Learning / Deep Learning ---
-torch==2.4.0
-torchaudio==2.4.0
-lightgbm==4.5.0
-xgboost==2.1.1
+torch==2.2.2          # 🔥 Prebuilt wheel available on Render
+torchaudio==2.2.2     # 🔥 Same version as torch
+lightgbm==4.2.0       # 🔥 No compile issues
+xgboost==2.0.3        # 🔥 Render-safe version
 
 # --- Google Gemini AI ---
 google-generativeai==0.7.2
@@ -41,17 +41,17 @@ requests==2.32.3
 httpx==0.27.0
 tqdm==4.66.4
 
-# --- Visualization (optional, for training) ---
-matplotlib==3.9.2
+# --- Visualization (safe) ---
+matplotlib==3.8.2
 seaborn==0.13.2
 
 # --- Security & Misc ---
 python-multipart==0.0.9
 pytz==2024.2
 
-# --- ONNX / Future ---
-onnxruntime==1.19.0
+# --- ONNX (safe version) ---
+onnxruntime==1.18.0   # 🔥 1.19+ breaks on Render
 
-# --- Dev Tools (optional; safe but heavy) ---
-ipython==8.26.0
-jupyter==1.0.0
+# --- Dev Tools (disabled in production)
+# ipython==8.26.0
+# jupyter==1.0.0
