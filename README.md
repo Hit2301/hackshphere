@@ -172,6 +172,8 @@ Jash M. Godhani - Frontend UI/UX
 
 Contact: busahit001@gmail.com
 
+recommended: use upload from device ( it is favorable)
+
 
 
 
