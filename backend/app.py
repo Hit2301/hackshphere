@@ -18,7 +18,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 MODEL_DIR = BASE_DIR / "ml_training" / "models"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logger = logging.getLogger("parkinson-backend")
+logger =  logging.getLogger("parkinson-backend")
 
 # =======================================================
 # 🧠 Load Models
